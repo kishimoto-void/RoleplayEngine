@@ -1,0 +1,12 @@
+{
+  "scene_id": "kirisame-house",
+  "participants": ["Alice", "Marisa"],
+  "location": "霧雨魔法店",
+  "objective": "借りたものと研究の話",
+  "current_state": "店の中。埃と魔導書",
+  "unresolved": ["返していない本がある"],
+  "exits": ["forest-gate", "alice-house"],
+  "time_label": "2026-09-07",
+  "links": ["forest-gate", "alice-house"],
+  "opening": "テーブルの上に借り物が残っている。"
+}

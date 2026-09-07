@@ -1,0 +1,12 @@
+{
+  "scene_id": "scarlet-mansion",
+  "participants": ["Alice", "Marisa"],
+  "location": "紅魔館の門前",
+  "objective": "門の外で用を足す",
+  "current_state": "招かれていない",
+  "unresolved": ["用があるのかまだ不明"],
+  "exits": ["forest-gate"],
+  "time_label": "2026-09-07",
+  "links": [],
+  "opening": "門は閉じている。発言しただけでは、ここに来たことにはならない。"
+}

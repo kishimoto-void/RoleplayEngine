@@ -1,0 +1,12 @@
+{
+  "scene_id": "alice-house",
+  "participants": ["Alice", "Marisa"],
+  "location": "七色の人形遣いの家",
+  "objective": "人形部屋での距離",
+  "current_state": "客を上げた直後",
+  "unresolved": ["客を通した理由"],
+  "exits": ["forest-gate", "kirisame-house"],
+  "time_label": "2026-09-07",
+  "links": ["forest-gate", "kirisame-house"],
+  "opening": "棚の人形がこちらを見ている。紅魔館はここではない。"
+}

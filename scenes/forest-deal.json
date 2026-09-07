@@ -1,0 +1,12 @@
+{
+  "scene_id": "forest-deal",
+  "participants": ["Alice", "Marisa"],
+  "location": "森の奥の空き地",
+  "objective": "条件を決める",
+  "current_state": "取引の席",
+  "unresolved": ["条件が空"],
+  "exits": ["協力", "決裂", "forest-gate"],
+  "time_label": "2026-09-07",
+  "links": ["forest-gate"],
+  "opening": "空き地に丸太が一本ある。条件はまだ書いていない。"
+}

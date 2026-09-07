@@ -25,5 +25,8 @@ save     Scene / Ζ / 事件 / Hash-B。Hash-A は参照
 tick     ユーザー沈黙でも次の現象
 enter    exits 以外は拒否
 VOICE    演算器の在庫。核ではない
+SceneBook 用意された場面。発言では増えない
+prepare  住所の換装。jump=False は links / exits だけ
+
 ```
 

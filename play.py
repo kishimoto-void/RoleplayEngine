@@ -11,6 +11,9 @@
   /save p  続きを書く
   /load p  続きを戻す
   /enter x 許可された出口だけ
+  /scenes  用意した場面
+  /prepare id  場面を今の住所にする（用意）
+  /go id   links / exits があるときだけ
   /claim t 世界主張（印なしでは事実にならない）
   /who     参加者
 """
@@ -91,6 +94,15 @@ def repl() -> None:
             continue
         if raw.startswith("/enter "):
             print(eng.enter(raw.split(" ", 1)[1]))
+            continue
+        if raw == "/scenes":
+            print(json.dumps(eng.scenes(), ensure_ascii=False, indent=2))
+            continue
+        if raw.startswith("/prepare "):
+            print(json.dumps(eng.prepare(raw.split(" ", 1)[1], jump=True), ensure_ascii=False, indent=2))
+            continue
+        if raw.startswith("/go "):
+            print(json.dumps(eng.prepare(raw.split(" ", 1)[1], jump=False), ensure_ascii=False, indent=2))
             continue
         if raw.startswith("/claim "):
             print(eng.claim_world("Alice", raw.split(" ", 1)[1], authorize=False))

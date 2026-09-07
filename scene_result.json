@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "book",
+      "ok": true
+    },
+    {
+      "id": "prepare",
+      "ok": true
+    },
+    {
+      "id": "no_route",
+      "ok": true
+    },
+    {
+      "id": "jump_not_fact",
+      "ok": true
+    },
+    {
+      "id": "route",
+      "ok": true
+    }
+  ]
+}

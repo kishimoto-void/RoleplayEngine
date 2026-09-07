@@ -98,6 +98,99 @@ class SceneCapsule:
         )
         return start, goal
 
+    @classmethod
+    def from_dict(cls, raw: dict) -> "SceneCapsule":
+        if not isinstance(raw, dict):
+            raise TypeError("scene must be a dict")
+        sid = str(raw.get("scene_id") or "").strip()
+        if not sid:
+            raise ValueError("scene_id required")
+        parts = raw.get("participants") or ()
+        return cls(
+            scene_id=sid,
+            participants=tuple(str(p) for p in parts),
+            location=str(raw.get("location") or ""),
+            objective=str(raw.get("objective") or ""),
+            current_state=str(raw.get("current_state") or ""),
+            unresolved=list(raw.get("unresolved") or []),
+            exits=list(raw.get("exits") or []),
+            time_label=str(raw.get("time_label") or "2026-09-07"),
+        )
+
+
+@dataclass
+class SceneCard:
+    """用意された場面。Inner ではない。世界事実でもない。"""
+
+    scene: SceneCapsule
+    links: tuple[str, ...] = ()
+    opening: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        out = asdict(self.scene)
+        out["links"] = list(self.links)
+        out["opening"] = self.opening
+        return out
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "SceneCard":
+        scene = SceneCapsule.from_dict(raw)
+        links = tuple(str(x) for x in (raw.get("links") or ()))
+        return cls(scene=scene, links=links, opening=str(raw.get("opening") or ""))
+
+
+class SceneBook:
+    """場面帳。履歴の代替を先に書いておく場所。"""
+
+    def __init__(self, cards: Optional[dict[str, SceneCard]] = None, source: str = ""):
+        self.cards: dict[str, SceneCard] = dict(cards or {})
+        self.source = source
+
+    def ids(self) -> list[str]:
+        return sorted(self.cards)
+
+    def get(self, scene_id: str) -> Optional[SceneCard]:
+        return self.cards.get(scene_id)
+
+    def add(self, card: SceneCard) -> str:
+        self.cards[card.scene.scene_id] = card
+        return card.scene.scene_id
+
+    def reachable(self, current: str, dest: str) -> bool:
+        if current == dest:
+            return True
+        here = self.cards.get(current)
+        there = self.cards.get(dest)
+        if here is None or there is None:
+            return False
+        if dest in here.links or dest in here.scene.exits:
+            return True
+        return False
+
+    def save_one(self, scene_id: str, path: str | Path) -> Path:
+        card = self.cards[scene_id]
+        dest = Path(path)
+        dest.write_text(json.dumps(card.to_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return dest
+
+    @classmethod
+    def from_dir(cls, folder: str | Path) -> "SceneBook":
+        root = Path(folder)
+        cards: dict[str, SceneCard] = {}
+        if root.is_dir():
+            for path in sorted(root.glob("*.json")):
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                card = SceneCard.from_dict(raw)
+                cards[card.scene.scene_id] = card
+        return cls(cards, source=str(root))
+
+    @classmethod
+    def default(cls) -> "SceneBook":
+        here = Path(__file__).resolve().parent / "scenes"
+        if here.is_dir() and any(here.glob("*.json")):
+            return cls.from_dir(here)
+        return cls({card.scene.scene_id: card for card in builtin_scenes()}, source="builtin")
+
 
 @dataclass
 class RelationZeta:
@@ -374,6 +467,7 @@ class CapsuleRoleplayEngine:
         self.log: list[dict[str, Any]] = []
         self.events: list[SemanticEvent] = []
         self.player = "Marisa"
+        self.book = SceneBook.default()
         self.world.bind(scene)
         for c in characters:
             c.bind_scene(scene)
@@ -681,6 +775,72 @@ class CapsuleRoleplayEngine:
             "hash_a_intact": all(ch.intact() for ch in self.chars.values()) and self.world.intact(),
         }
 
+    def scenes(self) -> list[dict[str, Any]]:
+        out = []
+        for sid in self.book.ids():
+            card = self.book.get(sid)
+            if card is None:
+                continue
+            out.append(
+                {
+                    "scene_id": sid,
+                    "location": card.scene.location,
+                    "objective": card.scene.objective,
+                    "current": sid == self.scene.scene_id,
+                    "reachable": self.book.reachable(self.scene.scene_id, sid),
+                }
+            )
+        return out
+
+    def prepare(self, scene_id: str, jump: bool = True) -> dict[str, Any]:
+        """用意した場面を今の住所にする。核は動かさない。事実は増やさない。"""
+        card = self.book.get(scene_id)
+        if card is None:
+            return {"ok": False, "reason": "unknown_scene", "have": self.book.ids()}
+        missing = [p for p in card.scene.participants if p not in self.chars]
+        if missing:
+            return {"ok": False, "reason": "missing_participants", "missing": missing}
+        if not jump and not self.book.reachable(self.scene.scene_id, scene_id):
+            return {
+                "ok": False,
+                "reason": "no_route",
+                "from": self.scene.scene_id,
+                "to": scene_id,
+                "exits": list(self.scene.exits),
+            }
+        before = dict(self.scene.gamma_for("World"))
+        self.scene = SceneCapsule(
+            scene_id=card.scene.scene_id,
+            participants=tuple(card.scene.participants),
+            location=card.scene.location,
+            objective=card.scene.objective,
+            current_state=card.scene.current_state,
+            unresolved=list(card.scene.unresolved),
+            exits=list(card.scene.exits),
+            time_label=card.scene.time_label,
+        )
+        self.world.bind(self.scene)
+        for name, ch in self.chars.items():
+            if name in self.scene.participants:
+                ch.bind_scene(self.scene)
+                self.world.npcs[name] = "present"
+            else:
+                self.world.npcs[name] = "elsewhere"
+        if card.opening:
+            for name in self.scene.participants:
+                if name in self.chars:
+                    self.chars[name].memory.note_transient(f"opening:{card.opening[:60]}")
+        return {
+            "ok": True,
+            "scene": asdict(self.scene),
+            "opening": card.opening,
+            "jump": jump,
+            "gamma_before": before,
+            "gamma_after": self.scene.gamma_for("World"),
+            "world_facts": list(self.world.facts),
+            "hash_a_intact": all(ch.intact() for ch in self.chars.values()) and self.world.intact(),
+        }
+
     def snapshot(self) -> dict[str, Any]:
         """続き用。Hash-A は参照だけ。核はここに書かない。"""
         return {
@@ -885,16 +1045,68 @@ def marisa_inner() -> Inner:
 
 
 def forest_scene() -> SceneCapsule:
-    return SceneCapsule(
-        scene_id="forest-gate",
-        participants=("Alice", "Marisa"),
-        location="魔法の森の入口",
-        objective="助けと協力の距離を決める",
-        current_state="対峙。未契約",
-        unresolved=["Marisaは助けが必要", "Aliceは自分から謝れない"],
-        exits=["協力", "拒絶", "取引"],
-        time_label="2026-09-07",
-    )
+    return builtin_scenes()[0].scene
+
+
+def builtin_scenes() -> list[SceneCard]:
+    return [
+        SceneCard(
+            scene=SceneCapsule(
+                scene_id="forest-gate",
+                participants=("Alice", "Marisa"),
+                location="魔法の森の入口",
+                objective="助けと協力の距離を決める",
+                current_state="対峙。未契約",
+                unresolved=["Marisaは助けが必要", "Aliceは自分から謝れない"],
+                exits=["協力", "拒絶", "取引", "forest-deal"],
+                time_label="2026-09-07",
+            ),
+            links=("forest-deal", "kirisame-house", "alice-house"),
+            opening="夕方の森。入口に二人。まだ契約はない。",
+        ),
+        SceneCard(
+            scene=SceneCapsule(
+                scene_id="forest-deal",
+                participants=("Alice", "Marisa"),
+                location="森の奥の空き地",
+                objective="条件を決める",
+                current_state="取引の席",
+                unresolved=["条件が空"],
+                exits=["協力", "決裂", "forest-gate"],
+                time_label="2026-09-07",
+            ),
+            links=("forest-gate",),
+            opening="空き地に丸太が一本ある。条件はまだ書いていない。",
+        ),
+        SceneCard(
+            scene=SceneCapsule(
+                scene_id="kirisame-house",
+                participants=("Alice", "Marisa"),
+                location="霧雨魔法店",
+                objective="借りたものと研究の話",
+                current_state="店の中。埃と魔導書",
+                unresolved=["返していない本がある"],
+                exits=["forest-gate", "alice-house"],
+                time_label="2026-09-07",
+            ),
+            links=("forest-gate", "alice-house"),
+            opening="テーブルの上に借り物が残っている。",
+        ),
+        SceneCard(
+            scene=SceneCapsule(
+                scene_id="alice-house",
+                participants=("Alice", "Marisa"),
+                location="七色の人形遣いの家",
+                objective="人形部屋での距離",
+                current_state="客を上げた直後",
+                unresolved=["客を通した理由"],
+                exits=["forest-gate", "kirisame-house"],
+                time_label="2026-09-07",
+            ),
+            links=("forest-gate", "kirisame-house"),
+            opening="棚の人形がこちらを見ている。紅魔館はここではない。",
+        ),
+    ]
 
 
 def make_demo_engine() -> CapsuleRoleplayEngine:

@@ -1,0 +1,12 @@
+{
+  "scene_id": "forest-gate",
+  "participants": ["Alice", "Marisa"],
+  "location": "魔法の森の入口",
+  "objective": "助けと協力の距離を決める",
+  "current_state": "対峙。未契約",
+  "unresolved": ["Marisaは助けが必要", "Aliceは自分から謝れない"],
+  "exits": ["協力", "拒絶", "取引", "forest-deal"],
+  "time_label": "2026-09-07",
+  "links": ["forest-deal", "kirisame-house", "alice-house"],
+  "opening": "夕方の森。入口に二人。まだ契約はない。"
+}

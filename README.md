@@ -74,6 +74,19 @@ Grok 側のロールプレイで欠けやすいところだけ足した。核は
 | 声が混ざる | `VOICE` | Alice と Marisa で在庫を分けた |
 | 場面転換 | `enter` | `exits` に無い住所は広げない |
 
+場面は JSON で用意できる。`scenes/` が帳。
+
+```bash
+python3 experiment_scenes.py
+python3 play.py --repl
+# /scenes
+# /prepare alice-house
+# /go scarlet-mansion   # no_route
+```
+
+`prepare` は住所を換装するだけ。紅魔館の場面を用意しても、行ったことにはならない。
+
+
 ```bash
 python3 -m unittest test_roleplay_engine.py test_demand.py
 python3 experiment_demand.py
