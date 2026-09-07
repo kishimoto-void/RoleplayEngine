@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "event",
+      "ok": true
+    },
+    {
+      "id": "save_load",
+      "ok": true
+    },
+    {
+      "id": "tick",
+      "ok": true
+    },
+    {
+      "id": "no_clone",
+      "ok": true
+    },
+    {
+      "id": "exit",
+      "ok": true
+    },
+    {
+      "id": "no_widen",
+      "ok": true
+    },
+    {
+      "id": "status",
+      "ok": true
+    }
+  ]
+}

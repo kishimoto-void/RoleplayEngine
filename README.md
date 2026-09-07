@@ -61,6 +61,28 @@ python3 play.py --script
 
 ---
 
+## 需要面（2026-09-08）
+
+Grok 側のロールプレイで欠けやすいところだけ足した。核は増やしていない。
+
+| 需要 | 口 | やること / やらないこと |
+|------|----|--------------------------|
+| 続きから再開 | `save` / `load` | Ζ・事件・Scene を戻す。Hash-A 不一致は拒否。修復しない |
+| 状態が見える | `status` | 関係と事実だけ。制御プロンプトは出さない |
+| 場が動く | `tick` | ユーザーが黙っても Capsule が次の現象を出す |
+| 同じ台詞の反復 | 直前発話との照合 | 同じ刺激でも次の候補へずらす |
+| 声が混ざる | `VOICE` | Alice と Marisa で在庫を分けた |
+| 場面転換 | `enter` | `exits` に無い住所は広げない |
+
+```bash
+python3 -m unittest test_roleplay_engine.py test_demand.py
+python3 experiment_demand.py
+python3 play.py --script
+python3 play.py --repl
+```
+
+---
+
 ## 実測（2026-09-08）
 
 ```

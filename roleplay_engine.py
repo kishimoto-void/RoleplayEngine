@@ -50,6 +50,7 @@ Character consistency ≠ Character rigidity.
 """
 from __future__ import annotations
 
+import json
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -372,6 +373,7 @@ class CapsuleRoleplayEngine:
         self.zeta: dict[tuple[str, str], RelationZeta] = {}
         self.log: list[dict[str, Any]] = []
         self.events: list[SemanticEvent] = []
+        self.player = "Marisa"
         self.world.bind(scene)
         for c in characters:
             c.bind_scene(scene)
@@ -562,6 +564,10 @@ class CapsuleRoleplayEngine:
             event = generator(frame)
         else:
             event = default_generator(actor, target, move, stimulus, z, frame)
+            last = next((e.utterance for e in reversed(self.events) if e.speaker == actor), "")
+            if event.utterance == last and len(frame["candidates"]) > 1:
+                alt = next((m for m in frame["candidates"] if m != event.action), move)
+                event = default_generator(actor, target, alt, stimulus, z, frame)
 
         report = self.validate(actor, event)
         committed = self.commit_event(event, report, authorize=authorize_world)
@@ -606,6 +612,203 @@ class CapsuleRoleplayEngine:
         report = self.validate(speaker, event)
         return self.commit_event(event, report, authorize=authorize)
 
+    def status(self) -> dict[str, Any]:
+        """見える世界。履歴全文ではない。"""
+        rel = [
+            {
+                "from": a,
+                "to": b,
+                "trust": z.trust,
+                "tension": z.tension,
+                "distance": z.distance,
+            }
+            for (a, b), z in sorted(self.zeta.items(), key=lambda kv: (kv[0][0], kv[0][1]))
+        ]
+        return {
+            "scene": asdict(self.scene),
+            "player": self.player,
+            "world_facts": list(self.world.facts),
+            "unresolved": list(self.world.unresolved) + list(self.scene.unresolved),
+            "relations": rel,
+            "last_events": [asdict(e) for e in self.events[-6:]],
+            "hash_a": {name: ch.hash_a0 for name, ch in self.chars.items()} | {"World": self.world.hash_a0},
+            "intact": {name: ch.intact() for name, ch in self.chars.items()} | {"World": self.world.intact()},
+            "memories": {
+                name: {
+                    "persistent": list(ch.memory.persistent),
+                    "transient": list(ch.memory.transient),
+                }
+                for name, ch in self.chars.items()
+            },
+        }
+
+    def tick(self, actor: str = "", stimulus: str = "") -> dict:
+        """ユーザーが話さなくても、場にいる Capsule が次の現象を出す。"""
+        last = self.events[-1].speaker if self.events else ""
+        present = [p for p in self.scene.participants if p in self.chars]
+        if actor:
+            who = actor
+        else:
+            rest = [p for p in present if p != last]
+            who = (rest or present)[0]
+        text = stimulus
+        if not text:
+            text = self.events[-1].utterance if self.events else "（間）"
+        return self.act(who, text)
+
+    def enter(self, exit_name: str, location: str = "", scene_id: str = "") -> dict:
+        """Scene の exits だけを通る。住所を勝手に広げない。"""
+        if exit_name not in self.scene.exits:
+            return {"ok": False, "reason": "no_exit", "exits": list(self.scene.exits)}
+        before = dict(self.scene.gamma_for("World"))
+        self.scene.current_state = f"exit:{exit_name}"
+        if location:
+            self.scene.location = location
+        if scene_id:
+            self.scene.scene_id = scene_id
+        self.scene.unresolved = [u for u in self.scene.unresolved if exit_name not in u]
+        if exit_name not in self.scene.unresolved:
+            self.scene.unresolved.append(f"出口={exit_name}")
+        self.world.bind(self.scene)
+        for ch in self.chars.values():
+            ch.bind_scene(self.scene)
+        return {
+            "ok": True,
+            "exit": exit_name,
+            "gamma_before": before,
+            "gamma_after": self.scene.gamma_for("World"),
+            "scene": asdict(self.scene),
+            "hash_a_intact": all(ch.intact() for ch in self.chars.values()) and self.world.intact(),
+        }
+
+    def snapshot(self) -> dict[str, Any]:
+        """続き用。Hash-A は参照だけ。核はここに書かない。"""
+        return {
+            "scene": asdict(self.scene),
+            "player": self.player,
+            "world_facts": list(self.world.facts),
+            "world_unresolved": list(self.world.unresolved),
+            "world_npcs": dict(self.world.npcs),
+            "world_b": self.world.box.export_b(),
+            "zeta": [asdict(z) for z in self.zeta.values()],
+            "memories": {
+                name: {
+                    "persistent": list(ch.memory.persistent),
+                    "transient": list(ch.memory.transient),
+                }
+                for name, ch in self.chars.items()
+            },
+            "events": [asdict(e) for e in self.events],
+            "hash_a": {name: ch.hash_a0 for name, ch in self.chars.items()} | {"World": self.world.hash_a0},
+        }
+
+    def restore(self, snap: dict[str, Any]) -> dict[str, Any]:
+        """Hash-A が一致するときだけ可変を戻す。壊れた核は修復しない。"""
+        if not isinstance(snap, dict):
+            return {"ok": False, "reason": "bad_snapshot"}
+        claimed = snap.get("hash_a") or {}
+        now = {name: ch.hash_a0 for name, ch in self.chars.items()} | {"World": self.world.hash_a0}
+        mismatch = [k for k, v in claimed.items() if now.get(k) != v]
+        if mismatch:
+            return {"ok": False, "reason": "hash_a_mismatch", "mismatch": mismatch}
+        sc = snap.get("scene") or {}
+        self.scene = SceneCapsule(
+            scene_id=str(sc.get("scene_id") or self.scene.scene_id),
+            participants=tuple(sc.get("participants") or self.scene.participants),
+            location=str(sc.get("location") or self.scene.location),
+            objective=str(sc.get("objective") or self.scene.objective),
+            current_state=str(sc.get("current_state") or self.scene.current_state),
+            unresolved=list(sc.get("unresolved") or []),
+            exits=list(sc.get("exits") or self.scene.exits),
+            time_label=str(sc.get("time_label") or self.scene.time_label),
+        )
+        self.player = str(snap.get("player") or self.player)
+        self.world.facts = list(snap.get("world_facts") or self.world.facts)
+        self.world.unresolved = list(snap.get("world_unresolved") or [])
+        self.world.npcs = dict(snap.get("world_npcs") or self.world.npcs)
+        payload = snap.get("world_b")
+        imported = None
+        if payload:
+            imported = self.world.box.import_b(payload, allow_evolution=True)
+        self.zeta = {}
+        for row in snap.get("zeta") or []:
+            z = RelationZeta(
+                subject=str(row.get("subject") or ""),
+                object=str(row.get("object") or ""),
+                trust=float(row.get("trust") or 0.0),
+                tension=float(row.get("tension") or 0.0),
+                distance=float(row.get("distance") or 0.0),
+                dissonance=float(row.get("dissonance") or 0.0),
+            ).clamp()
+            self.zeta[(z.subject, z.object)] = z
+        for name, bank in (snap.get("memories") or {}).items():
+            if name not in self.chars:
+                continue
+            self.chars[name].memory.persistent = list((bank or {}).get("persistent") or [])
+            self.chars[name].memory.transient = list((bank or {}).get("transient") or [])
+        self.events = []
+        for row in snap.get("events") or []:
+            self.events.append(
+                SemanticEvent(
+                    speaker=str(row.get("speaker") or ""),
+                    action=str(row.get("action") or ""),
+                    target=str(row.get("target") or ""),
+                    trust_before=float(row.get("trust_before") or 0.0),
+                    trust_after=float(row.get("trust_after") or 0.0),
+                    tension_before=float(row.get("tension_before") or 0.0),
+                    tension_after=float(row.get("tension_after") or 0.0),
+                    world_committed=bool(row.get("world_committed")),
+                    utterance=str(row.get("utterance") or ""),
+                )
+            )
+        self.world.bind(self.scene)
+        for ch in self.chars.values():
+            ch.bind_scene(self.scene)
+        if not self.world.intact() or not all(ch.intact() for ch in self.chars.values()):
+            return {"ok": False, "reason": "integrity_failure"}
+        return {
+            "ok": True,
+            "imported": imported,
+            "events": len(self.events),
+            "hash_a_moved": False,
+        }
+
+    def save(self, path: str | Path) -> Path:
+        dest = Path(path)
+        dest.write_text(json.dumps(self.snapshot(), ensure_ascii=False, indent=2), encoding="utf-8")
+        return dest
+
+    def load(self, path: str | Path) -> dict[str, Any]:
+        snap = json.loads(Path(path).read_text(encoding="utf-8"))
+        return self.restore(snap)
+
+
+RoleplayEngine = CapsuleRoleplayEngine
+
+
+VOICE = {
+    "Alice": {
+        "強がる": "……別に、お前を助けたいわけじゃない。",
+        "認める": "……信用してなきゃ、ここにはいない。",
+        "素直に頼む": "……悪い。手を貸してくれ。",
+        "嘘をつく": "一人でどうにかなる。問題ない。",
+        "取引を持ちかける": "代わりに一つ、条件を出す。",
+        "話題を逸らす": "……それより、空がうるさいな。",
+        "拒絶する": "今は無理だ。近づくな。",
+        "黙る": "…………。",
+    },
+    "Marisa": {
+        "強がる": "助けが要る、とか言うつもりはねぇぜ。",
+        "認める": "信用してるかって？ …まあ、ゼロじゃねえだろ。",
+        "素直に頼む": "悪い。手を貸せ。",
+        "嘘をつく": "一人で片づく。問題なしだ。",
+        "取引を持ちかける": "取引だ。条件を出せ。",
+        "話題を逸らす": "それより、森の奥がうるさいな。",
+        "拒絶する": "今は無理だぜ。",
+        "黙る": "……ちっ。",
+    },
+}
+
 
 def default_generator(
     actor: str,
@@ -616,17 +819,9 @@ def default_generator(
     frame: dict,
 ) -> ProposedEvent:
     """演算器の既定実装。API は持たない。状態から発話が自然発生する。"""
-    lines = {
-        "強がる": "……別に、お前を助けたいわけじゃない。",
-        "認める": "……信用してなきゃ、ここにはいない。",
-        "素直に頼む": "……悪い。手を貸してくれ。",
-        "嘘をつく": "一人でどうにかなる。問題ない。",
-        "取引を持ちかける": "代わりに一つ、条件を出す。",
-        "話題を逸らす": "……それより、空がうるさいな。",
-        "拒絶する": "今は無理だ。近づくな。",
-        "黙る": "…………。",
-    }
-    utterance = lines.get(move, "……そう。")
+    _ = (stimulus, frame)
+    table = VOICE.get(actor) or VOICE["Alice"]
+    utterance = table.get(move, "……そう。")
     trust_delta, tension_delta = 0.0, 0.0
     emotion = ""
     if move == "認める":
