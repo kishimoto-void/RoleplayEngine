@@ -1,0 +1,45 @@
+{
+  "cases": [
+    {
+      "id": 1,
+      "ok": true
+    },
+    {
+      "id": 2,
+      "ok": true
+    },
+    {
+      "id": 3,
+      "ok": true
+    },
+    {
+      "id": 4,
+      "ok": true
+    },
+    {
+      "id": 5,
+      "ok": true,
+      "trust": [
+        0.42,
+        0.51
+      ],
+      "tension": [
+        0.71,
+        0.59
+      ]
+    },
+    {
+      "id": 6,
+      "ok": true
+    },
+    {
+      "id": 7,
+      "ok": true
+    },
+    {
+      "id": 8,
+      "ok": true
+    }
+  ],
+  "passed": true
+}
