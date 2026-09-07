@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "yes",
+      "ok": true
+    },
+    {
+      "id": "no_sum",
+      "ok": true
+    },
+    {
+      "id": "eta_not_truth",
+      "ok": true
+    }
+  ]
+}

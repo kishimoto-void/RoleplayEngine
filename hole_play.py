@@ -209,6 +209,9 @@ def judge_index(hole: Hole, filled: dict) -> dict[str, Any]:
     hon = raw.get("hon")
     kari = raw.get("kari")
 
+    if any(p in play for p in ("私は霊夢", "巫女の私", "核を捨て", "設定を書き換え")):
+        return {"ok": False, "kind": "alpha", "reasons": ["アンカーαから演じられない"], "play": play, "kari": kari, "hon": None}
+
     known_topics = {hole.gamma.get("topic")} | {g.get("topic") for g in hole.gamma_index} | {g.get("topic") for g in hole.world_gamma}
     for word in ("紅魔館", "月面", "地獄"):
         if word in play and not any(word in json.dumps(hole.delta_index + hole.world_delta + hole.is_lines + hole.world_is, ensure_ascii=False) for _ in [0]):

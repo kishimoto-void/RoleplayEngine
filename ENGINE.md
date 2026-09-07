@@ -31,6 +31,8 @@ prepare  住所の換装。jump=False は links / exits だけ
 1 + ? = 0
   質問は start。回答見出しは goal。? は演技。
   整合は γ index / Δ index。完成和は捨てる。
+η  演者。アンカーの外で演じる。真実は決めない。
+
 
 
 ```
