@@ -14,6 +14,7 @@
   /scenes  用意した場面
   /prepare id  場面を今の住所にする（用意）
   /go id   links / exits があるときだけ
+  /hole q  質問 + ? = 回答。? を演じる
   /claim t 世界主張（印なしでは事実にならない）
   /who     参加者
 """
@@ -22,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 
+from hole_play import play_hole
 from roleplay_engine import make_demo_engine
 
 
@@ -103,6 +105,12 @@ def repl() -> None:
             continue
         if raw.startswith("/go "):
             print(json.dumps(eng.prepare(raw.split(" ", 1)[1], jump=False), ensure_ascii=False, indent=2))
+            continue
+        if raw.startswith("/hole "):
+            out = play_hole(eng, raw.split(" ", 1)[1])
+            print(out["form"], out["equation"][:120])
+            print(" play", out.get("play"))
+            print(" Δ", out.get("index_after", {}).get("delta"))
             continue
         if raw.startswith("/claim "):
             print(eng.claim_world("Alice", raw.split(" ", 1)[1], authorize=False))

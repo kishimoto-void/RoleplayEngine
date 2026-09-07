@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "sync",
+      "ok": true
+    },
+    {
+      "id": "form",
+      "ok": true
+    },
+    {
+      "id": "finished",
+      "ok": true
+    },
+    {
+      "id": "act",
+      "ok": true
+    },
+    {
+      "id": "closed",
+      "ok": true
+    }
+  ]
+}

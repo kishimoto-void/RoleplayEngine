@@ -28,5 +28,10 @@ VOICE    演算器の在庫。核ではない
 SceneBook 用意された場面。発言では増えない
 prepare  住所の換装。jump=False は links / exits だけ
 
+1 + ? = 0
+  質問は start。回答見出しは goal。? は演技。
+  整合は γ index / Δ index。完成和は捨てる。
+
+
 ```
 

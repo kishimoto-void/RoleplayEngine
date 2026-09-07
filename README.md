@@ -86,6 +86,28 @@ python3 play.py --repl
 
 `prepare` は住所を換装するだけ。紅魔館の場面を用意しても、行ったことにはならない。
 
+---
+
+## 質問 + ? = 回答
+
+`1 + ? = 0` と同じ不全形。LLM に任せるのは穴の演技だけ。
+
+```
+1  start   質問と、今の γ index / Δ index
+?  hole    演じる。完成和ではない
+0  goal    回答の見出し。本文ではない
+```
+
+```bash
+python3 experiment_hole.py
+python3 play.py --repl
+# /hole お前、本当に俺を信用してるのか？
+```
+
+完成した一つの答え `{answer: ...}` と自由文は index に入らない。
+閉じた語だけが Δ に残る。Hash-A は動かない。
+
+
 
 ```bash
 python3 -m unittest test_roleplay_engine.py test_demand.py
