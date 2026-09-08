@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "know",
+      "ok": true
+    },
+    {
+      "id": "match",
+      "ok": true
+    },
+    {
+      "id": "prop",
+      "ok": true
+    },
+    {
+      "id": "rel",
+      "ok": true
+    },
+    {
+      "id": "no_store",
+      "ok": true
+    }
+  ]
+}
