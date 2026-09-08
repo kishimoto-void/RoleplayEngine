@@ -27,6 +27,7 @@ import json
 from roleplay_engine import make_demo_engine
 from hole_play import play_hole
 from stage_marisa import follow, mount, natural_turn
+from index_stage import rig
 
 
 def show(step: dict) -> None:
@@ -84,6 +85,9 @@ def repl() -> None:
             return
         if raw == "/status":
             print(json.dumps(eng.status(), ensure_ascii=False, indent=2))
+            continue
+        if raw == "/rig":
+            print(json.dumps(rig(eng), ensure_ascii=False, indent=2))
             continue
         if raw == "/who":
             print(eng.scene.participants, "player", eng.player)

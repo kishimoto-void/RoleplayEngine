@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "gamma",
+      "ok": true
+    },
+    {
+      "id": "delta_prop",
+      "ok": true
+    },
+    {
+      "id": "delta_char",
+      "ok": true
+    },
+    {
+      "id": "intact",
+      "ok": true
+    },
+    {
+      "id": "not_fact",
+      "ok": true
+    }
+  ]
+}

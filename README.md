@@ -78,7 +78,12 @@ Grok 側のロールプレイで欠けやすいところだけ足した。核は
 | 声が混ざる | `VOICE` | Alice と Marisa で在庫を分けた |
 | 場面転換 | `enter` | `exits` に無い住所は広げない |
 
-場面は JSON で用意できる。`scenes/` が帳。
+γ index は舞台の住所。Δ index はキャラの立場と小道具。閉じた語のまま。
+
+```bash
+python3 experiment_index_stage.py
+```
+
 
 ```bash
 python3 experiment_scenes.py
