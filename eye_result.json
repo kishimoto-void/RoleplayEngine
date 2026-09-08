@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "same_place",
+      "ok": true
+    },
+    {
+      "id": "world_empty_hands",
+      "ok": true
+    },
+    {
+      "id": "split_kit",
+      "ok": true
+    },
+    {
+      "id": "no_store",
+      "ok": true
+    }
+  ]
+}

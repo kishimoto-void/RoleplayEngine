@@ -101,6 +101,13 @@ def repl() -> None:
         if raw.startswith("/vine "):
             print(json.dumps(study(eng, raw.split(" ", 1)[1]), ensure_ascii=False, indent=2))
             continue
+        if raw.startswith("/eye "):
+            parts = raw.split(" ", 2)
+            if len(parts) < 3:
+                print("usage: /eye Alice 茶")
+                continue
+            print(json.dumps(look(eng, parts[2], parts[1]), ensure_ascii=False, indent=2))
+            continue
         if raw == "/who":
             print(eng.scene.participants, "player", eng.player)
             continue
