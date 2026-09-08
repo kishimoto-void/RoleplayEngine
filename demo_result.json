@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "script",
+      "ok": true
+    },
+    {
+      "id": "unknown",
+      "ok": true
+    },
+    {
+      "id": "no_world",
+      "ok": true
+    }
+  ]
+}

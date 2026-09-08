@@ -1,15 +1,19 @@
 # RoleplayEngine
 
-Capsule の上に載せたロールプレイ専用の実行系。
+表の顔は **ゆっくり実況台本メーカー**。中は Capsule の実行系。
 
+## デモ
+
+```bash
+python3 demo.py
+python3 demo.py --web
 ```
-Capsule-Prototype   核。凍結。触らない
-Capsule-Roleplay    最初の実測スナップショット
-RoleplayEngine      本リポジトリ。実行系の名前
-```
+
+ブラウザなら `http://127.0.0.1:8765/` 。文章を入れて「台本にする」。
 
 親: https://github.com/kishimoto-void/Capsule-Prototype  
 先行実測: https://github.com/kishimoto-void/Capsule-Roleplay
+
 
 Capsule を賢くしない。人格を生成しない。安全機構を主役にしない。  
 LLM は物語の支配者ではなく、次の現象を提案する演算器である。
