@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "cue",
+      "ok": true
+    },
+    {
+      "id": "move",
+      "ok": true
+    },
+    {
+      "id": "event",
+      "ok": true
+    }
+  ]
+}

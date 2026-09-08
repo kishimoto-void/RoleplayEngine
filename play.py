@@ -15,6 +15,7 @@
   /prepare id  場面を今の住所にする（用意）
   /go id   links / exits があるときだけ
   /hole q  質問 + ? = 回答。? を演じる
+  /stage t 魔理沙の舞台手がかりで場面を換装
   /claim t 世界主張（印なしでは事実にならない）
   /who     参加者
 """
@@ -23,8 +24,9 @@ from __future__ import annotations
 import argparse
 import json
 
-from hole_play import play_hole
 from roleplay_engine import make_demo_engine
+from hole_play import play_hole
+from stage_marisa import follow, mount, natural_turn
 
 
 def show(step: dict) -> None:
@@ -67,7 +69,8 @@ def run_script() -> dict:
 
 def repl() -> None:
     eng = make_demo_engine()
-    print("RoleplayEngine. /status /tick /save /load /enter /claim /who")
+    mount(eng)
+    print("RoleplayEngine. /status /tick /save /load /enter /scenes /prepare /go /hole /stage /claim /who")
     print("地の文は Marisa の発話として通す。")
     while True:
         try:
@@ -112,11 +115,17 @@ def repl() -> None:
             print(" play", out.get("play"))
             print(" Δ", out.get("index_after", {}).get("delta"))
             continue
+        if raw.startswith("/stage "):
+            print(json.dumps(follow(eng, raw.split(" ", 1)[1], jump=False), ensure_ascii=False, indent=2))
+            continue
         if raw.startswith("/claim "):
             print(eng.claim_world("Alice", raw.split(" ", 1)[1], authorize=False))
             continue
-        step = eng.user_says(raw, speaker=eng.player, target="Alice")
-        show(step)
+        turned = natural_turn(eng, raw, speaker=eng.player, jump=False)
+        print(" scene", turned["scene"], turned["location"], turned["stage"].get("reason") or turned["stage"].get("ok"))
+        step = turned["step"]
+        print(f"  {eng.player}: {raw}")
+        print(f"  reply {step['utterance']}")
 
 
 def main() -> None:
