@@ -30,10 +30,11 @@ def know_places(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str,
             "topic": place.scene_id,
         }
         eng.world.rt.bind(filt)
+        floor = ",".join(scene_props(place.scene_id))
         pkt = {
             "gamma": filt,
-            "delta": [{"field": "状態", "new_value": f"場所={place.name}"}],
-            "is": [{"field": "状態", "value": f"場所={place.name}"}],
+            "delta": [{"field": "状態", "new_value": f"場所={place.name} / 場={floor}"}],
+            "is": [{"field": "状態", "value": f"場所={place.name} / 場={floor}"}],
         }
         report = eng.world.rt.commit(pkt, identity=1.0, authorize=authorize)
         known.append(

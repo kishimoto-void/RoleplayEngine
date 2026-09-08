@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "tea_place",
+      "ok": true
+    },
+    {
+      "id": "no_book",
+      "ok": true
+    },
+    {
+      "id": "shop_no_tea",
+      "ok": true
+    },
+    {
+      "id": "clean",
+      "ok": true
+    }
+  ]
+}
