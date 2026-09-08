@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from hole_play import _delta_rows, _gamma_rows
-from index_stage import props_for, stamp_cast, stamp_stage
+from index_stage import _parts, held_props, props_for, scene_props, stamp_cast, stamp_stage
 from roleplay_engine import CapsuleRoleplayEngine
 from stage_marisa import EVENTS, PLACES, mount
 
@@ -109,9 +109,16 @@ def depth_view(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
         if rows:
             world_hits.append(place.scene_id)
     matched = topic in world_hits
-    delta = {"props": [], "events": [], "people": []}
+    delta = {"場": [], "props": [], "events": [], "people": []}
     delta2: list[dict[str, Any]] = []
     if matched:
+        wrows = _delta_rows(
+            eng.world.box,
+            {"time_label": eng.scene.time_label, "project": "World", "topic": topic},
+        )
+        wstate = _latest(wrows, "状態")
+        floor = _parts(wstate, "場") or scene_props(topic)
+        delta["場"] = floor
         present = [n for n in eng.scene.participants if n in eng.chars]
         for name in present:
             filt = {
@@ -123,11 +130,9 @@ def depth_view(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
             stance = _latest(rows, "立場")
             state = _latest(rows, "状態")
             task = _latest(rows, "課題")
-            held = []
-            if state.startswith("小道具="):
-                held = [x for x in state.split("=", 1)[1].split(",") if x]
-            delta["people"].append({"name": name, "立場": stance, "課題": task, "小道具": held})
-            for item in held:
+            held = _parts(state, "所持") or _parts(state, "小道具") or held_props(name)
+            delta["people"].append({"name": name, "立場": stance, "課題": task, "所持": held})
+            for item in held + floor:
                 if item not in delta["props"]:
                     delta["props"].append(item)
             if task and task not in delta["events"]:
@@ -135,22 +140,24 @@ def depth_view(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
         for i, a in enumerate(present):
             for b in present[i + 1 :]:
                 z = eng.zeta_of(a, b)
-                shared = [p for p in props_for(topic, [a, b]) if p in (delta["props"] or props_for(topic, present))]
+                shared = [p for p in floor if p]
                 nxt = "間を取る"
-                if "茶" in delta["props"] or "茶" in shared:
+                if "茶" in floor:
                     nxt = "縁側で茶"
-                elif "魔導書" in delta["props"]:
+                elif "魔導書" in floor:
                     nxt = "借り物の話"
-                elif "キノコ籠" in delta["props"]:
+                elif "キノコ籠" in floor:
                     nxt = "採取を続ける"
                 elif z.trust < 0.35:
                     nxt = "距離を測る"
+                actor = a if z.trust >= eng.zeta_of(b, a).trust else b
                 delta2.append(
                     {
                         "from": a,
                         "to": b,
+                        "actor": actor,
                         "trust": z.trust,
-                        "props": shared,
+                        "場": floor,
                         "next": nxt,
                         "writes": False,
                     }
@@ -180,4 +187,27 @@ def remember(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
         "depth": view,
         "hash_a_intact": view["hash_a_intact"],
         "world_facts": list(eng.world.facts),
+    }
+
+
+def play_delta2(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
+    """γ が当たったときだけ、Δ2 の次を現象として通す。World には書かない。"""
+    view = depth_view(eng)
+    if not view["gamma"]["match"]:
+        return {"ok": False, "reason": "no_gamma", "depth": view, "wrote_world": False}
+    if not view["delta2"]:
+        return {"ok": False, "reason": "no_delta2", "depth": view, "wrote_world": False}
+    rel = view["delta2"][0]
+    actor = rel.get("actor") or rel["from"]
+    if actor not in eng.chars:
+        actor = next(iter(eng.chars))
+    step = eng.act(actor, rel["next"])
+    return {
+        "ok": bool(step.get("ok")),
+        "next": rel["next"],
+        "actor": actor,
+        "utterance": step.get("utterance"),
+        "wrote_world": bool((step.get("commit") or {}).get("wrote_world")),
+        "depth": view,
+        "hash_a_intact": all(ch.intact() for ch in eng.chars.values()),
     }

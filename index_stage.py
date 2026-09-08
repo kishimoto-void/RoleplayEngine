@@ -43,13 +43,21 @@ def _scene_filt(eng: CapsuleRoleplayEngine, project: str) -> dict[str, str]:
     }
 
 
+def scene_props(scene_id: str) -> list[str]:
+    return list(PROPS.get(scene_id, ()))
+
+
+def held_props(name: str) -> list[str]:
+    return list(KIT.get(name, ()))
+
+
 def props_for(scene_id: str, names: list[str] | None = None) -> list[str]:
     seen = []
-    for item in PROPS.get(scene_id, ()):
+    for item in scene_props(scene_id):
         if item not in seen:
             seen.append(item)
     for name in names or ():
-        for item in KIT.get(name, ()):
+        for item in held_props(name):
             if item not in seen:
                 seen.append(item)
     return seen
@@ -64,10 +72,12 @@ def stamp_stage(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str,
     for ch in eng.chars.values():
         ch.bind_scene(eng.scene)
     wfilt = _scene_filt(eng, "World")
+    floor = scene_props(eng.scene.scene_id)
+    state = f"場所={eng.scene.location} / 場={','.join(floor)}"
     pkt = {
         "gamma": wfilt,
-        "delta": [{"field": "状態", "new_value": f"場所={eng.scene.location}"}],
-        "is": [{"field": "状態", "value": f"場所={eng.scene.location}"}],
+        "delta": [{"field": "状態", "new_value": state}],
+        "is": [{"field": "状態", "value": state}],
     }
     report = eng.world.rt.commit(pkt, identity=1.0, authorize=authorize)
     moved = [n for n, h in frozen.items() if (eng.chars[n].hash_a0 if n != "World" else eng.world.hash_a0) != h]
@@ -86,8 +96,7 @@ def stamp_stage(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str,
 def stamp_cast(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str, Any]:
     """キャラを Δ.立場、小道具を Δ.状態へ。"""
     present = [n for n in eng.scene.participants if n in eng.chars]
-    props = props_for(eng.scene.scene_id, present)
-    prop_line = "小道具=" + ",".join(props) if props else "小道具="
+    floor = scene_props(eng.scene.scene_id)
     out = []
     for name in present:
         ch = eng.chars[name]
@@ -96,16 +105,17 @@ def stamp_cast(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str, 
         z = eng.zeta_of(name, target)
         filt = _scene_filt(eng, name)
         ch.rt.bind(filt)
+        held = held_props(name)
         pkt = {
             "gamma": filt,
             "delta": [
                 {"field": "立場", "new_value": f"{name}->{target} trust={z.trust:.2f}"},
-                {"field": "状態", "new_value": prop_line},
+                {"field": "状態", "new_value": "所持=" + ",".join(held)},
                 {"field": "課題", "new_value": ch.goal or eng.scene.objective},
             ],
             "is": [
                 {"field": "立場", "value": f"{name}->{target} trust={z.trust:.2f}"},
-                {"field": "状態", "value": prop_line},
+                {"field": "状態", "value": "所持=" + ",".join(held)},
                 {"field": "課題", "value": ch.goal or eng.scene.objective},
             ],
         }
@@ -121,7 +131,7 @@ def stamp_cast(eng: CapsuleRoleplayEngine, authorize: bool = True) -> dict[str, 
                 "delta": _delta_rows(ch.box, filt),
             }
         )
-    return {"ok": all(row["ok"] for row in out) if out else False, "cast": out, "props": props, "hash_a_moved": False}
+    return {"ok": all(row["ok"] for row in out) if out else False, "cast": out, "props": floor, "hash_a_moved": False}
 
 
 def read_stage(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
@@ -138,24 +148,39 @@ def read_stage(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
     }
 
 
+def _parts(state: str, key: str) -> list[str]:
+    if key + "=" not in state:
+        return []
+    chunk = state.split(key + "=", 1)[1]
+    chunk = chunk.split(" / ")[0]
+    return [x for x in chunk.split(",") if x]
+
+
 def read_cast(eng: CapsuleRoleplayEngine) -> dict[str, Any]:
     """Δ index をキャラと小道具として読む。"""
     people = []
     props: list[str] = []
+    wstate = ""
+    wrows = _delta_rows(eng.world.box, _scene_filt(eng, "World"))
+    for row in reversed(wrows):
+        if row.get("field") == "状態":
+            wstate = str(row.get("new_value") or "")
+            break
+    for item in _parts(wstate, "場"):
+        if item not in props:
+            props.append(item)
     for name, ch in eng.chars.items():
         filt = _scene_filt(eng, name)
         deltas = _delta_rows(ch.box, filt)
         stance = next((d["new_value"] for d in reversed(deltas) if d["field"] == "立場"), "")
         state = next((d["new_value"] for d in reversed(deltas) if d["field"] == "状態"), "")
         task = next((d["new_value"] for d in reversed(deltas) if d["field"] == "課題"), "")
-        held = []
-        if state.startswith("小道具="):
-            held = [x for x in state.split("=", 1)[1].split(",") if x]
-            for item in held:
-                if item not in props:
-                    props.append(item)
-        people.append({"name": name, "立場": stance, "課題": task, "小道具": held, "delta": deltas})
-    return {"characters": people, "props": props}
+        held = _parts(state, "所持") or _parts(state, "小道具")
+        for item in held:
+            if item not in props:
+                props.append(item)
+        people.append({"name": name, "立場": stance, "課題": task, "所持": held, "小道具": held, "delta": deltas})
+    return {"characters": people, "props": props, "場": _parts(wstate, "場")}
 
 
 def rig(eng: CapsuleRoleplayEngine) -> dict[str, Any]:

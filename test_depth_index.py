@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-from depth_index import depth_view, know_places, remember
+from depth_index import depth_view, know_places, play_delta2, remember
 from roleplay_engine import make_demo_engine
 from stage_marisa import follow
 
@@ -38,6 +38,19 @@ class TestDepth(unittest.TestCase):
         view = depth_view(eng)
         self.assertFalse(view["gamma"]["match"])
         self.assertEqual(view["delta2"], [])
+
+    def test_delta2_plays_without_writing_world(self):
+        eng = make_demo_engine()
+        follow(eng, "ちょっと神社寄るぜ", jump=False)
+        remember(eng)
+        facts0 = list(eng.world.facts)
+        out = play_delta2(eng)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["next"], "縁側で茶")
+        self.assertTrue(out["utterance"])
+        self.assertFalse(out["wrote_world"])
+        self.assertEqual(eng.world.facts, facts0)
+        self.assertTrue(out["hash_a_intact"])
 
 
 if __name__ == "__main__":
