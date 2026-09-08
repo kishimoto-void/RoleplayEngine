@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "chars",
+      "ok": true
+    },
+    {
+      "id": "tokens",
+      "ok": true
+    },
+    {
+      "id": "split",
+      "ok": true
+    },
+    {
+      "id": "unknown",
+      "ok": true
+    },
+    {
+      "id": "follow",
+      "ok": true
+    }
+  ]
+}

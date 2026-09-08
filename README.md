@@ -127,6 +127,27 @@ python3 play.py --repl
 # ちょっと神社寄るぜ
 ```
 
+---
+
+## ゆっくり実況台本メーカー
+
+表の入口。RoleplayEngine そのものは売らない。
+
+```
+原文 → 素材（事実 / 人物 / 場所 / 時系列 / 不明）
+     → Stage → Event → 話者 → 演技
+書いてあること ≠ LLMが膨らませたこと ≠ World
+```
+
+```bash
+python3 yukkuri.py
+python3 yukkuri.py --mode follow "1. 魔理沙が森へ行く
+2. キノコを探す
+3. 神社へ向かう
+4. 霊夢と会話する"
+```
+
+
 
 
 
