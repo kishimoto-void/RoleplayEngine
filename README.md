@@ -140,12 +140,11 @@ python3 play.py --repl
 ```
 
 ```bash
-python3 yukkuri.py
-python3 yukkuri.py --mode follow "1. 魔理沙が森へ行く
-2. キノコを探す
-3. 神社へ向かう
-4. 霊夢と会話する"
+python3 yukkuri.py --holes
 ```
+
+スタート / 本編 / 帰結はそれぞれ `1 + ? = 0` の穴。LLM が ? を作る。見出しは所与。完成和は捨てる。
+
 
 
 

@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "three",
+      "ok": true
+    },
+    {
+      "id": "form",
+      "ok": true
+    },
+    {
+      "id": "script",
+      "ok": true
+    },
+    {
+      "id": "no_world",
+      "ok": true
+    },
+    {
+      "id": "reject_sum",
+      "ok": true
+    }
+  ]
+}
