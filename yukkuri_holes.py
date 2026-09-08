@@ -127,9 +127,15 @@ def stub_llm(prompt: str) -> str:
     )
 
 
-def fill_slot(hole: dict[str, Any], llm: Callable[[str], str]) -> dict[str, Any]:
-    raw = llm(prompt_slot(hole))
-    judged = judge_slot(raw)
+def fill_slot(hole: dict[str, Any], llm: Callable[[str], str], retries: int = 1) -> dict[str, Any]:
+    last = {"ok": False, "kind": "empty", "reasons": ["empty"], "play": [], "kari": None}
+    raw = ""
+    for _ in range(max(1, retries + 1)):
+        raw = llm(prompt_slot(hole))
+        last = judge_slot(raw)
+        if last.get("ok") and last.get("kind") == "acting":
+            break
+    judged = last
     lines = [
         Line(speaker=row["speaker"], text=row["text"], origin="acted", beat=hole["slot"], scene_id=hole["slot"])
         for row in judged.get("play") or []

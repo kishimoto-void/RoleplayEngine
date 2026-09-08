@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "title",
+      "ok": true
+    },
+    {
+      "id": "end",
+      "ok": true
+    },
+    {
+      "id": "unknown",
+      "ok": true
+    },
+    {
+      "id": "export",
+      "ok": true
+    },
+    {
+      "id": "no_world",
+      "ok": true
+    }
+  ],
+  "export": "/workspace/artifacts/RoleplayEngine/yukkuri_super.txt"
+}

@@ -7,6 +7,7 @@ import json
 
 from yukkuri_holes import compose_holes
 from yukkuri_maker import convert
+from yukkuri_super import super_make
 
 
 def main() -> None:
@@ -16,6 +17,24 @@ def main() -> None:
     p.add_argument("--json", action="store_true")
     p.add_argument("--no-acting", action="store_true")
     p.add_argument("--holes", action="store_true", help="スタート/本編/帰結を ? として LLM が埋める")
+    p.add_argument("--super", action="store_true", help="貼れる台本。タイトルとオチ付き")
+    p.add_argument("--out", default="", help="台本を書き出すパス")
+    args = p.parse_args()
+    text = " ".join(args.text).strip()
+    if not text:
+        text = "魔理沙が森でキノコを探してたら、霊夢に会って神社に行くことになった"
+    if args.super:
+        out = super_make(text, mode=args.mode, out=args.out or None)
+        if args.json:
+            print(json.dumps({k: v for k, v in out.items() if k != "holes"}, ensure_ascii=False, indent=2))
+            print(out["script"])
+            return
+        print(out["product"])
+        print(out["script"])
+        print("panel", out["panel"])
+        if out.get("export"):
+            print("wrote", out["export"])
+        return
     args = p.parse_args()
     text = " ".join(args.text).strip()
     if not text:
