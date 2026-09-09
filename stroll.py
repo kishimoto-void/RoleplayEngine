@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from npc_cast import at_place, line_of
+from rack import RackCapsule
 
 
 @dataclass(frozen=True)
@@ -88,13 +89,18 @@ class Stroll:
     facts: list[str] = field(default_factory=list)
     day: int = 0
     traces: list[dict[str, Any]] = field(default_factory=list)
+    rack: RackCapsule = field(default_factory=RackCapsule)
 
     def traces_here(self) -> list[dict[str, Any]]:
-        return [t for t in self.traces if t.get("pos") == self.pos and t.get("day", 0) < self.day]
+        from_rack = [{"pos": self.pos, "day": self.day - 1, "what": t, "who": ""} for t in self.rack.traces_at(self.pos)]
+        local = [t for t in self.traces if t.get("pos") == self.pos and t.get("day", 0) < self.day]
+        seen = {t["what"] for t in from_rack}
+        return from_rack + [t for t in local if t["what"] not in seen]
 
     def mark(self, what: str, who: str = "player") -> dict[str, Any]:
         row = {"pos": self.pos, "day": self.day, "what": what, "who": who}
         self.traces.append(row)
+        self.rack.put("trace", what, place=self.pos, who=who)
         return {"ok": True, "trace": row, "wrote_world": False, "facts": list(self.facts)}
 
     def sleep(self) -> dict[str, Any]:
@@ -103,6 +109,7 @@ class Stroll:
         self.pos = "torii"
         self.facing = "ahead"
         self.near.clear()
+        self.rack.sleep()
         return {
             "ok": True,
             "day": self.day,
