@@ -44,6 +44,8 @@ Capsule の上に載せたロールプレイ実行系。
 - 霊夢は場にいなければ出ない
 - スタート / 本編 / 帰結は別々の `1 + ? = 0`
 - デモは `python3 demo.py` と `python3 demo.py --web`
+- 散歩は観測。`/look` `/move` `/approach` `/leave` `/wait`。何もない時間も残す
+
 
 まだ stub であること
 
@@ -146,7 +148,7 @@ repl の短い口
 | `x_guard.py` | X 側不満の門 |
 | `voice_stock.py` | 3型在庫 |
 | `yukkuri_*.py` | 台本メーカー |
-| `demo.py` | 見せる入口 |
+| `stroll.py` | 散歩。視界の Δ。遭遇はイベントではない |
 
 ---
 

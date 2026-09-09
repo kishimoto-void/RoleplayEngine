@@ -32,6 +32,7 @@ from depth_index import play_delta2, remember
 from vine import study
 from eye import look
 from x_guard import guard, quiet_tick
+from stroll import Stroll
 
 
 def show(step: dict) -> None:
@@ -75,7 +76,8 @@ def run_script() -> dict:
 def repl() -> None:
     eng = make_demo_engine()
     mount(eng)
-    print("RoleplayEngine. /status /tick /save /load /enter /scenes /prepare /go /hole /stage /claim /who")
+    walk = Stroll()
+    print("RoleplayEngine. 散歩は /look /move /approach /leave /wait")
     print("地の文は Marisa の発話として通す。")
     while True:
         try:
@@ -110,8 +112,27 @@ def repl() -> None:
                 continue
             print(json.dumps(look(eng, parts[2], parts[1]), ensure_ascii=False, indent=2))
             continue
+        if raw == "/look":
+            row = walk.look()
+            print(row["time"], row["place"], row["delta"], row["eta"])
+            continue
+        if raw.startswith("/move"):
+            dest = raw.split(" ", 1)[1] if " " in raw else ""
+            row = walk.move(dest)
+            print(row)
+            continue
+        if raw.startswith("/approach "):
+            print(walk.approach(raw.split(" ", 1)[1]))
+            continue
+        if raw == "/leave":
+            print(walk.leave())
+            continue
+        if raw == "/wait":
+            row = walk.wait()
+            print(row["time"], row["place"], row["eta"], "empty", row["empty"])
+            continue
         if raw == "/who":
-            print(eng.scene.participants, "player", eng.player)
+            print(eng.scene.participants, "player", eng.player, "walk", walk.pos)
             continue
         if raw == "/tick":
             out = quiet_tick(eng)

@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "starts_empty",
+      "ok": true
+    },
+    {
+      "id": "empty_ok",
+      "ok": true
+    },
+    {
+      "id": "meet_late",
+      "ok": true
+    },
+    {
+      "id": "no_world",
+      "ok": true
+    }
+  ]
+}
