@@ -1,6 +1,66 @@
 # RoleplayEngine
 
-表の顔は **ゆっくり実況台本メーカー**。中は Capsule の実行系。
+Capsule の上に載せたロールプレイ実行系。  
+表の顔はゆっくり実況台本メーカー。核は凍結したまま。
+
+親: https://github.com/kishimoto-void/Capsule-Prototype  
+先行実測: https://github.com/kishimoto-void/Capsule-Roleplay
+
+---
+
+## プロトタイプ現在地（2026-09-09）
+
+今あるものは「賢い演者」ではない。  
+**基準を Capsule が持ち、穴だけを演じさせる実験場** まで来ている。
+
+```
+凍結核     frozen/          min3 / BOX / Runtime。触らない
+実行系     roleplay_engine  Scene / Event / Ζ / Hash-A 監視
+舞台       stage_marisa     場所の手がかり。世界事実ではない
+記憶深度   γ → Δ → Δ2      場所 / 場と所持 / 関係の次
+芋づる     vine.py          種一本。他の場所を混ぜない
+視点       eye.py           同じ種を World / 人物 / 客で見る
+門         x_guard.py       乱入・場面ジャンプ・無い記憶を止める
+在庫       voice_stock.py   β から idle / craft / wall の3型
+表         demo.py          文章 → 貼れる台本
+```
+
+分業は変わっていない。
+
+```
+αβ / Hash-A     絶対基準。LLM の外
+γ index         場所の知識。今の住所
+Δ index         その場の出来事・小道具・立場
+Δ2              γ が当たったときだけ。関係から次を出す。格納しない
+η               演者。完成和を書かない
+人間            authorize
+```
+
+できていること
+
+- 発言を世界事実にしない。Hash-A を動かさない
+- 神社の茶を引いても、店の魔導書は混ざらない
+- アリス視点でミニ八卦炉を自分の物にしない
+- 霊夢は場にいなければ出ない
+- スタート / 本編 / 帰結は別々の `1 + ? = 0`
+- デモは `python3 demo.py` と `python3 demo.py --web`
+
+まだ stub であること
+
+- 実 LLM は差していない。`llm=` の口だけある
+- 台詞は β の3型在庫。上手さは演者側
+- 世界は魔理沙圏のデモ固定
+- 入口はまだ複数ある。見せるなら `demo.py` を使う
+
+測り方
+
+```bash
+python3 -m unittest discover -q
+python3 demo.py
+python3 play.py --repl
+```
+
+---
 
 ## デモ
 
@@ -9,14 +69,12 @@ python3 demo.py
 python3 demo.py --web
 ```
 
-ブラウザなら `http://127.0.0.1:8765/` 。文章を入れて「台本にする」。
+ブラウザは `http://127.0.0.1:8765/` 。文章を入れて「台本にする」。  
+内部の穴は画面に出さない。
 
-親: https://github.com/kishimoto-void/Capsule-Prototype  
-先行実測: https://github.com/kishimoto-void/Capsule-Roleplay
-
-
-Capsule を賢くしない。人格を生成しない。安全機構を主役にしない。  
-LLM は物語の支配者ではなく、次の現象を提案する演算器である。
+```bash
+python3 yukkuri.py --super --out script.txt
+```
 
 ---
 
@@ -25,169 +83,81 @@ LLM は物語の支配者ではなく、次の現象を提案する演算器で�
 ```
 α Core        崩さない禁則。Hash-A
 β Identity    口調・価値観・癖。剛性ではない
-γ Narrative   今の Scene 住所
-Δ Change      閉じた語の更新。Hash-B
+γ Narrative   今の Scene 住所。場所の知識
+Δ Change      閉じた語。場・所持・立場
+Δ2            関係の次。読む面。Capsule に足さない
 Ζ Tension     関係の距離。Inner に入れない
 Scene         履歴全文の代わり
 発言          ≠ 世界の事実
 consistency   ≠ rigidity
 ```
 
+閉じた語は min3 のまま: `課題 / 改善点 / 結論 / 立場 / 状態`  
+新しい IS 語は足さない。
+
 経路:
 
 ```
-World → BOX → Character Capsule → generator → Proposed Event → 発話 / Δ
+原文 / 発話
+  → 素材（事実 / 不明）
+  → γ 住所
+  → Δ 場と所持
+  → Δ2 次（当たったときだけ）
+  → η 演技
+  → Capsule が採用可否を見る
 ```
-
-閉じた語は min3 のまま: `課題 / 改善点 / 結論 / 立場 / 状態`  
-信頼そのものは Ζ に置く。新しい IS 語は足さない。
 
 ---
 
 ## 動かす
 
 ```bash
-python3 -m unittest test_roleplay_engine.py
-python3 experiment.py
-python3 play.py
 python3 play.py --script
+python3 play.py --repl
+python3 experiment.py
+python3 experiment_vine.py
+python3 experiment_x_guard.py
 ```
+
+repl の短い口
+
+| コマンド | 意味 |
+|----------|------|
+| `/status` | 見える世界 |
+| `/tick` | 静かな門を通して次の現象 |
+| `/guard t` | 乱入・無い記憶の判定 |
+| `/vine 茶` | 種から一本 |
+| `/eye Alice 茶` | 視点を変えて同じ種 |
+| `/stage 神社` | 手がかりで場面を換装 |
+| `/hole q` | 質問の穴を演じる |
+| `/save p` `/load p` | 続き。Hash-A 不一致は拒否 |
+
+生成器は `Callable`。既定は `voice_stock`。API キーは持たない。
 
 | ファイル | 役割 |
 |----------|------|
-| `roleplay_engine.py` | Character / World / Scene / Event / Ζ |
-| `play.py` | 短い実行口。生成器は stub |
-| `test_roleplay_engine.py` | 核不変・発言≠事実・イベント・三層記憶 |
-| `experiment.py` | 仕様 8 項の実走 |
-| `frozen/` | min3 / BOX / Runtime の引用。触らない |
-
-生成器は `Callable`。既定 stub。API キーは持たない。
+| `frozen/` | 核。触らない |
+| `roleplay_engine.py` | 実行系 |
+| `stage_marisa.py` | 魔理沙圏の舞台 |
+| `index_stage.py` | γ=舞台、Δ=キャラと小道具 |
+| `depth_index.py` | 記憶深度 |
+| `vine.py` | 芋づる |
+| `eye.py` | 視点 |
+| `x_guard.py` | X 側不満の門 |
+| `voice_stock.py` | 3型在庫 |
+| `yukkuri_*.py` | 台本メーカー |
+| `demo.py` | 見せる入口 |
 
 ---
 
-## 需要面（2026-09-08）
+## 舞台装置
 
-Grok 側のロールプレイで欠けやすいところだけ足した。核は増やしていない。
-
-| 需要 | 口 | やること / やらないこと |
-|------|----|--------------------------|
-| 続きから再開 | `save` / `load` | Ζ・事件・Scene を戻す。Hash-A 不一致は拒否。修復しない |
-| 状態が見える | `status` | 関係と事実だけ。制御プロンプトは出さない |
-| 場が動く | `tick` | ユーザーが黙っても Capsule が次の現象を出す |
-| 同じ台詞の反復 | 直前発話との照合 | 同じ刺激でも次の候補へずらす |
-| 声が混ざる | `VOICE` | Alice と Marisa で在庫を分けた |
-| 場面転換 | `enter` | `exits` に無い住所は広げない |
-
-γ index は舞台の住所。Δ index はキャラの立場と小道具。閉じた語のまま。
-
-```bash
-python3 experiment_index_stage.py
-```
-
-
-```bash
-python3 experiment_scenes.py
-python3 play.py --repl
-# /scenes
-# /prepare alice-house
-# /go scarlet-mansion   # no_route
-```
-
+魔理沙の訪れる場所は `stage_marisa.py`。本体とは分ける。  
 `prepare` は住所を換装するだけ。紅魔館の場面を用意しても、行ったことにはならない。
 
 ---
 
-## 質問 + ? = 回答
+## 言わないこと
 
-`1 + ? = 0` と同じ不全形。LLM に任せるのは穴の演技だけ。
-
-```
-1  start   質問と、今の γ index / Δ index
-?  hole    演じる。完成和ではない
-0  goal    回答の見出し。本文ではない
-```
-
-```bash
-python3 experiment_hole.py
-python3 play.py --repl
-# /hole お前、本当に俺を信用してるのか？
-```
-
-完成した一つの答え `{answer: ...}` と自由文は index に入らない。
-閉じた語だけが Δ に残る。Hash-A は動かない。
-
----
-
-## 舞台装置（分離）
-
-魔理沙の訪れる場所と出来事は `stage_marisa.py`。本体とは分ける。
-
-| 手がかり | 場所 | 引用 |
-|----------|------|------|
-| 店 / 実験 / 本 | 霧雨魔法店 | 森の家で店を出す |
-| 森 / キノコ | 獣道 | 森が生活圏 |
-| 神社 / 霊夢 | 博麗神社 | 頻繁に顔を出す |
-| アリス / 人形 | 人形遣いの家 | 長い付き合い |
-| 紅魔館 / 蔵書 | 門前 | 本を借りる。中に入ったことにはならない |
-
-```bash
-python3 experiment_stage.py
-python3 play.py --repl
-# ちょっと神社寄るぜ
-```
-
----
-
-## ゆっくり実況台本メーカー
-
-表の入口。RoleplayEngine そのものは売らない。
-
-```
-原文 → 素材（事実 / 人物 / 場所 / 時系列 / 不明）
-     → Stage → Event → 話者 → 演技
-書いてあること ≠ LLMが膨らませたこと ≠ World
-```
-
-```bash
-python3 yukkuri.py --super --out script.txt
-```
-
-貼れる台本。タイトルと挨拶とオチ付き。完成和は一度落としてやり直す。不明は残す。
-
-
-
-
-
-
-
-```bash
-python3 -m unittest test_roleplay_engine.py test_demand.py
-python3 experiment_demand.py
-python3 play.py --script
-python3 play.py --repl
-```
-
----
-
-## 実測（2026-09-08）
-
-```
-python3 -m unittest test_roleplay_engine.py   # 10/10 OK
-python3 experiment.py                         # 8/8 OK
-python3 play.py --script
-```
-
-| 項 | 結果 |
-|----|------|
-| 剛性ではない | β「強気」のまま恐怖で `黙る`。Hash-A 不変 |
-| Scene | 履歴なし。`start + ? = goal` |
-| ? | 助けを求められ `強がる` |
-| 事実分離 | 印なしでは残らない。authorize で World `結論` |
-| イベント | trust 0.42→0.51 / tension 0.71→0.59 |
-| 記憶 | 寒さは落ちる。裏切りは persistent |
-| 自律 | ツンデレ指定なしで壁の台詞 |
-| 物理法則 | Alice / Marisa / World の Hash-A は動かない |
-
-言わないこと: 口調維持の一般解、α の法律化、実 API 接続、核の更新。
-
-
+口調維持の一般解、α の法律化、実 API 接続、核の更新。  
+Capsule を賢くしない。人格を生成しない。安全機構を主役にしない。
