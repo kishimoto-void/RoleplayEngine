@@ -86,6 +86,30 @@ class Stroll:
     seen: list[str] = field(default_factory=list)
     log: list[dict] = field(default_factory=list)
     facts: list[str] = field(default_factory=list)
+    day: int = 0
+    traces: list[dict[str, Any]] = field(default_factory=list)
+
+    def traces_here(self) -> list[dict[str, Any]]:
+        return [t for t in self.traces if t.get("pos") == self.pos and t.get("day", 0) < self.day]
+
+    def mark(self, what: str, who: str = "player") -> dict[str, Any]:
+        row = {"pos": self.pos, "day": self.day, "what": what, "who": who}
+        self.traces.append(row)
+        return {"ok": True, "trace": row, "wrote_world": False, "facts": list(self.facts)}
+
+    def sleep(self) -> dict[str, Any]:
+        self.day += 1
+        self.elapsed = 0
+        self.pos = "torii"
+        self.facing = "ahead"
+        self.near.clear()
+        return {
+            "ok": True,
+            "day": self.day,
+            "pos": self.pos,
+            "time": _clock(self.elapsed),
+            "wrote_world": False,
+        }
 
     def node(self) -> Node:
         return SHRINE[self.pos]
@@ -101,6 +125,8 @@ class Stroll:
         if self.facing == "ahead" and here.ahead:
             nxt = SHRINE[here.ahead[0]]
             out.append({"name": nxt.name, "kind": "ahead", "note": "まだ遠い", "distance": 2})
+        for tr in self.traces_here():
+            out.append({"name": tr["what"], "kind": "trace", "note": f"day{tr['day']}", "distance": 0})
         return out
 
     def delta(self) -> dict[str, list[str]]:
@@ -110,6 +136,7 @@ class Stroll:
             "場": [v["name"] for v in near if v["kind"] in {"place", "prop"}],
             "人": [v["name"] for v in near if v["kind"] == "person"],
             "気配": [v["name"] for v in vis if v["kind"] in {"hint", "ahead"}],
+            "跡": [v["name"] for v in vis if v["kind"] == "trace"],
         }
 
     def delta2(self) -> list[dict[str, Any]]:
@@ -117,12 +144,17 @@ class Stroll:
         links = []
         if "霊夢" in d["人"] and "茶" in d["場"]:
             links.append({"from": "霊夢", "to": "茶", "next": "縁側の茶", "writes": False})
+        if "霊夢" in d["人"] and any("明日" in t or "また来" in t for t in d.get("跡") or []):
+            links.append({"from": "霊夢", "to": "跡", "next": "昨日の続き", "writes": False})
         if not links and not d["人"]:
             links.append({"from": self.node().name, "to": "", "next": "間", "writes": False})
         return links
 
     def eta(self, newly: list[str]) -> str:
         if "霊夢" in newly:
+            traces = self.delta().get("跡") or []
+            if any("明日" in t or "また来" in t for t in traces):
+                return "霊夢「……来たな」"
             return line_of("Reimu", "wall")
         if "茶" in newly and "霊夢" not in self.delta()["人"]:
             return line_of("Reimu", "idle")
@@ -140,6 +172,7 @@ class Stroll:
         row = {
             "ok": True,
             "kind": kind,
+            "day": self.day,
             "time": _clock(self.elapsed),
             "pos": self.pos,
             "place": self.node().name,
@@ -184,6 +217,8 @@ class Stroll:
 
         def extra() -> None:
             self.near.add(hit.name)
+            if hit.name == "霊夢":
+                self.traces.append({"pos": self.pos, "day": self.day, "what": "昨日ここで会った", "who": "霊夢"})
 
         return self._step("approach", extra)
 

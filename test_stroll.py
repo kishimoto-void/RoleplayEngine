@@ -39,10 +39,24 @@ class TestStroll(unittest.TestCase):
         self.assertFalse(after["wrote_world"])
         self.assertEqual(st.facts, [])
 
-    def test_cannot_skip_to_engawa(self):
+    def test_yesterday_stays_on_the_porch(self):
         st = Stroll()
-        bad = st.move("engawa")
-        self.assertFalse(bad["ok"])
+        st.move("sandou")
+        st.move("keidai")
+        st.move("engawa")
+        first = st.approach("霊夢")
+        st.mark("また明日来るよ")
+        self.assertNotIn("また明日来るよ", first["delta"].get("跡") or [])
+        st.sleep()
+        st.move("sandou")
+        st.move("keidai")
+        st.move("engawa")
+        seen = st.look()
+        self.assertIn("また明日来るよ", seen["delta"]["跡"])
+        again = st.approach("霊夢")
+        self.assertIn("来たな", again["eta"])
+        self.assertFalse(again["wrote_world"])
+        self.assertEqual(st.facts, [])
 
 
 if __name__ == "__main__":

@@ -132,6 +132,12 @@ def repl() -> None:
             row = walk.wait()
             print(row["time"], row["place"], row["eta"], "empty", row["empty"])
             continue
+        if raw.startswith("/mark "):
+            print(walk.mark(raw.split(" ", 1)[1]))
+            continue
+        if raw == "/sleep":
+            print(walk.sleep())
+            continue
         if raw.startswith("/grav"):
             parts = raw.split()
             if len(parts) == 1:
