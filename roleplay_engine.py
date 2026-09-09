@@ -63,6 +63,7 @@ if str(_FROZEN) not in sys.path:
 from axiom_min3 import Alpha, Beta, BetaFact, Inner, parse_packet
 from BOX import BOX
 from runtime import Runtime, classify
+from voice_stock import pick as pick_voice
 
 CLOSED_WORDS = ("課題", "改善点", "結論", "立場", "状態")
 
@@ -661,7 +662,7 @@ class CapsuleRoleplayEngine:
             last = next((e.utterance for e in reversed(self.events) if e.speaker == actor), "")
             if event.utterance == last and len(frame["candidates"]) > 1:
                 alt = next((m for m in frame["candidates"] if m != event.action), move)
-                event = default_generator(actor, target, alt, stimulus, z, frame)
+                event = default_generator(actor, target, alt, stimulus, z, {**frame, "last_line": last})
 
         report = self.validate(actor, event)
         committed = self.commit_event(event, report, authorize=authorize_world)
@@ -978,10 +979,13 @@ def default_generator(
     zeta: RelationZeta,
     frame: dict,
 ) -> ProposedEvent:
-    """演算器の既定実装。API は持たない。状態から発話が自然発生する。"""
-    _ = (stimulus, frame)
-    table = VOICE.get(actor) or VOICE["Alice"]
-    utterance = table.get(move, "……そう。")
+    """演算器の既定実装。台詞は β の3型から引く。"""
+    last = ""
+    if isinstance(frame, dict):
+        last = str(frame.get("last_line") or "")
+    picked = pick_voice(actor, stimulus, move, last)
+    utterance = picked["line"]
+    _ = zeta
     trust_delta, tension_delta = 0.0, 0.0
     emotion = ""
     if move == "認める":
