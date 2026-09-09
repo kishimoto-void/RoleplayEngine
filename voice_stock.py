@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from gravity import lean
+
 # 出典は roleplay_engine の Beta / BetaFact と stage の手がかり。
 SOURCE = {
     "Alice": {
@@ -72,7 +74,9 @@ MOVE_TO_PATTERN = {
 }
 
 
-def pattern_of(stimulus: str, move: str = "") -> str:
+def pattern_of(stimulus: str, move: str = "", actor: str = "") -> str:
+    if actor:
+        return lean(actor, stimulus, move)
     raw = stimulus or ""
     if any(w in raw for w in ("茶", "縁側", "暇", "間", "座", "日常", "ゆっくり")):
         return "idle"
@@ -89,7 +93,7 @@ def lines_of(actor: str, pattern: str) -> tuple[str, ...]:
 
 
 def pick(actor: str, stimulus: str = "", move: str = "", last: str = "") -> dict[str, Any]:
-    pat = pattern_of(stimulus, move)
+    pat = pattern_of(stimulus, move, actor)
     lines = list(lines_of(actor, pat))
     if move == "認める" and actor == "Alice" and "信用" in (stimulus or ""):
         chosen = "……信用してなきゃ、ここにはいない。"

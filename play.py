@@ -32,6 +32,7 @@ from depth_index import play_delta2, remember
 from vine import study
 from eye import look
 from x_guard import guard, quiet_tick
+from gravity import analyze, set_weight
 from stroll import Stroll
 
 
@@ -130,6 +131,22 @@ def repl() -> None:
         if raw == "/wait":
             row = walk.wait()
             print(row["time"], row["place"], row["eta"], "empty", row["empty"])
+            continue
+        if raw.startswith("/grav"):
+            parts = raw.split()
+            if len(parts) == 1:
+                print("usage: /grav Marisa  or  /grav Marisa curiosity=0.7")
+                continue
+            name = parts[1]
+            if len(parts) == 2:
+                print(json.dumps(analyze(name), ensure_ascii=False, indent=2))
+                continue
+            kw = {}
+            for item in parts[2:]:
+                if "=" in item:
+                    k, v = item.split("=", 1)
+                    kw[k] = float(v)
+            print(set_weight(name, **kw))
             continue
         if raw == "/who":
             print(eng.scene.participants, "player", eng.player, "walk", walk.pos)

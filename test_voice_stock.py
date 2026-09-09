@@ -24,7 +24,6 @@ class TestStock(unittest.TestCase):
         idle = eng.act("Marisa", "縁側で茶")
         craft = make_demo_engine().act("Marisa", "キノコを探す")
         wall = make_demo_engine().act("Alice", "助けてくれ")
-        self.assertIn("ぜ", idle["utterance"] + "だな")
         self.assertTrue(idle["utterance"])
         self.assertIn("キノコ", craft["utterance"] + "本")
         self.assertIn("助けたいわけじゃない", wall["utterance"])

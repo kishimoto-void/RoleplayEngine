@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from gravity import lean
+
 
 @dataclass(frozen=True)
 class Npc:
@@ -99,11 +101,12 @@ def at_place(place: str) -> list[Npc]:
     return [n for n in CAST if place in n.hang or n.home == place]
 
 
-def line_of(nid: str, pattern: str = "idle") -> str:
+def line_of(nid: str, pattern: str = "") -> str:
     npc = by_id(nid)
     if npc is None:
         return ""
-    return {"idle": npc.idle, "craft": npc.craft, "wall": npc.wall}.get(pattern) or npc.idle
+    pat = pattern or lean(npc.nid)
+    return {"idle": npc.idle, "craft": npc.craft, "wall": npc.wall}.get(pat) or npc.idle
 
 
 def card(nid: str) -> dict[str, Any]:
