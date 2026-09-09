@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from npc_cast import at_place, line_of
+
 
 @dataclass(frozen=True)
 class Thing:
@@ -121,9 +123,9 @@ class Stroll:
 
     def eta(self, newly: list[str]) -> str:
         if "霊夢" in newly:
-            return "霊夢「……あら、来たのね」"
+            return line_of("Reimu", "wall")
         if "茶" in newly and "霊夢" not in self.delta()["人"]:
-            return "縁側に茶が置いてある。まだ誰の声もない。"
+            return line_of("Reimu", "idle")
         if not newly:
             return self.node().empty
         return ""

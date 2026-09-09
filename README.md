@@ -148,7 +148,7 @@ repl の短い口
 | `x_guard.py` | X 側不満の門 |
 | `voice_stock.py` | 3型在庫 |
 | `yukkuri_*.py` | 台本メーカー |
-| `stroll.py` | 散歩。視界の Δ。遭遇はイベントではない |
+| `npc_cast.py` | 霊夢 / 魔理沙 / アリス / パチュリーの配置。Hash-A ではない |
 
 ---
 
