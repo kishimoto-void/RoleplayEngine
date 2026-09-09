@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "no_reimu",
+      "ok": true
+    },
+    {
+      "id": "stay",
+      "ok": true
+    },
+    {
+      "id": "no_fake",
+      "ok": true
+    }
+  ],
+  "quiet": "……別に、お前を助けたいわけじゃない。"
+}

@@ -30,6 +30,8 @@ from stage_marisa import follow, mount, natural_turn
 from index_stage import rig
 from depth_index import play_delta2, remember
 from vine import study
+from eye import look
+from x_guard import guard, quiet_tick
 
 
 def show(step: dict) -> None:
@@ -112,7 +114,11 @@ def repl() -> None:
             print(eng.scene.participants, "player", eng.player)
             continue
         if raw == "/tick":
-            show(eng.tick())
+            out = quiet_tick(eng)
+            print(out.get("actor"), out.get("utterance"), "world", out.get("wrote_world"), out.get("reasons"))
+            continue
+        if raw.startswith("/guard "):
+            print(json.dumps(guard(eng, raw.split(" ", 1)[1]), ensure_ascii=False, indent=2))
             continue
         if raw.startswith("/save "):
             print("wrote", eng.save(raw.split(" ", 1)[1]))
